@@ -1,104 +1,89 @@
 import { Button, Input, Table } from "antd";
-import type { SorterResult } from "antd/es/table/interface";
-import { TableProps } from "antd/lib/table";
 import { useEffect, useState } from "react";
+import { getData } from "../api";
+import "./style.css";
+
+const columns = [
+  {
+    title: "title",
+    dataIndex: "title",
+    sorter: (a: any, b: any) => (a.title > b.title ? 1 : -1),
+    render: (title: any) => `${title} ${title}`,
+  },
+  {
+    title: "director",
+    dataIndex: "director",
+    sorter: (a: any, b: any) => (a.director > b.director ? 1 : -1),
+    render: (director: any) => `${director} ${director}`,
+  },
+  {
+    title: "objectId",
+    dataIndex: "objectId",
+    sorter: (a: any, b: any) => (a.objectId > b.objectId ? 1 : -1),
+    render: (objectId: any) => `${objectId} ${objectId}`,
+  },
+];
 
 const MovieTable = () => {
   const [showTable, setShowTable] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [userList, setUserList] = useState<any>({
-    loading: true,
-    pagination: {},
-    data: [],
-  });
+  const [dataSource, setDataSource] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  const [pagination, setPagination] = useState({});
-  console.log(pagination);
-
-  useEffect(() => {
-    customFetch({});
-  }, []);
-
-  const columns = [
-    {
-      title: "id",
-      dataIndex: "id",
-    },
-    {
-      title: "title",
-      dataIndex: "title",
-      sorter: (a: any, b: any) => (a.title > b.title ? 1 : -1),
-      render: (title: any) => `${title} ${title}`,
-      width: "40%",
-    },
-    {
-      title: "body",
-      dataIndex: "body",
-      sorter: (a: any, b: any) => (a.body > b.body ? 1 : -1),
-      render: (body: any) => `${body} ${body}`,
-      width: "40%",
-    },
-  ];
-  const customFetch = async (params = {}) => {
-    setIsLoading(true);
-    const response = await fetch(
-      "https://jsonplaceholder.typicode.com/posts?_page=0&_limit=60"
-    );
-    const result = await response.json();
-    setUserList({
-      loading: true,
-      pagination: {},
-      data: result,
-    });
-    setIsLoading(false);
-  };
-  const handleTableChange: TableProps<any>["onChange"] = (
-    pagination,
-    filters,
-    sorter
-  ) => {
-    setPagination(pagination);
-
-    customFetch({
-      results: pagination.pageSize,
-      page: pagination.current,
-      sortOrder: (sorter as SorterResult<any>).order,
-      ...filters,
+  const fetchRecords = (page: any) => {
+    setLoading(true);
+    getData(page).then((res) => {
+      setDataSource(res.results);
+      setTotalPages(res.count);
+      setLoading(false);
     });
   };
 
   const search = (value: any) => {
-    const filterTable = userList.filter((o: any) =>
-      Object.keys(o).some((k) =>
-        String(o[k]).toLowerCase().includes(value.toLowerCase())
+    const filterTable = dataSource.filter((item: any) =>
+      Object.keys(item).some((key) =>
+        String(item[key]).toLowerCase().includes(value.toLowerCase())
       )
     );
-
-    setUserList(filterTable);
+    setDataSource(filterTable);
   };
 
+  useEffect(() => {
+    fetchRecords(1);
+  }, []);
+
   return (
-    <div>
-      <Button onClick={() => setShowTable((prevState) => !prevState)}>
-        Load Now
-      </Button>
+    <div style={{ marginTop: "50px" }}>
+      {!showTable && (
+        <Button onClick={() => setShowTable((prevState) => !prevState)}>
+          Load Now
+        </Button>
+      )}
+
       {showTable && (
         <div>
-          <h1>Table</h1>
-          <Input.Search
-            placeholder="Search by..."
-            enterButton
-            onSearch={search}
-          />
-          <div>
-            <Table
-              columns={columns}
-              dataSource={userList.data}
-              loading={isLoading}
-              onChange={handleTableChange}
-              pagination={pagination}
-              rowKey="email"
+          <div className="searchWrapper">
+            <Input.Search
+              placeholder="Search by..."
+              enterButton
+              onSearch={search}
+              className="searchInput"
             />
+          </div>
+
+          <div className="tableWraper">
+            <Table
+              loading={loading}
+              columns={columns}
+              dataSource={dataSource}
+              pagination={{
+                pageSize: 2,
+                total: totalPages,
+                onChange: (page) => {
+                  fetchRecords(page);
+                },
+              }}
+            ></Table>
           </div>
         </div>
       )}

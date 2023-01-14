@@ -1,0 +1,12 @@
+.searchWrapper {
+  margin-bottom: 20px;
+  text-align: right;
+}
+.searchInput {
+  width: 200px;
+}
+.tableWraper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
